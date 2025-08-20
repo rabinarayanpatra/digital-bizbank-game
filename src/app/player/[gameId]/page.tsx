@@ -70,7 +70,6 @@ export default function PlayerWallet() {
     if (!socket || !playerData) return
 
     const handleTransactionCreated = (data: any) => {
-      // Update balance if this player is involved
       if (data.balancesSnapshot[playerData.account.id] !== undefined) {
         setPlayerData(prev => prev ? {
           ...prev,
@@ -80,20 +79,7 @@ export default function PlayerWallet() {
           }
         } : null)
       }
-      
-      // Always refresh transactions for this player to show new activity
-      // Add a small delay to ensure the database has been updated
-      setTimeout(async () => {
-        try {
-          const response = await fetch(`/api/tx?gameId=${gameId}&accountId=${playerData.account.id}&limit=20`)
-          if (response.ok) {
-            const transactions = await response.json()
-            setTransactions(transactions)
-          }
-        } catch (error) {
-          console.error('Error refreshing transactions:', error)
-        }
-      }, 100) // 100ms delay to ensure DB consistency
+      fetchTransactions()
     }
 
     socket.on('tx:created', handleTransactionCreated)
@@ -101,7 +87,7 @@ export default function PlayerWallet() {
     return () => {
       socket.off('tx:created', handleTransactionCreated)
     }
-  }, [socket, playerData, gameId])
+  }, [socket, playerData])
 
   const checkSession = async () => {
     try {
