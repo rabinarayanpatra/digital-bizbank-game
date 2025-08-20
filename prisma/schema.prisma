@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum GameStatus {
+  ACTIVE
+  ENDED
+  ARCHIVED
+}
+
+enum AccountType {
+  BANK
+  PLAYER
+}
+
+model Game {
+  id                      String      @id @default(cuid())
+  name                    String
+  joinCode                String      @unique
+  currencySymbol          String
+  totalBudget             Int
+  startingMoneyPerPlayer  Int
+  status                  GameStatus  @default(ACTIVE)
+  createdAt               DateTime    @default(now())
+  endedAt                 DateTime?
+  
+  accounts                Account[]
+  transactions            Transaction[]
+  sessions                Session[]
+  settings                Setting?
+  
+  @@index([joinCode])
+}
+
+model Account {
+  id           String      @id @default(cuid())
+  gameId       String
+  type         AccountType
+  displayName  String
+  balance      Int         @default(0)
+  
+  game         Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  
+  fromTransactions  Transaction[] @relation("FromAccount")
+  toTransactions    Transaction[] @relation("ToAccount")
+  sessions          Session[]
+  
+  @@index([gameId])
+}
+
+model Transaction {
+  id            String   @id @default(cuid())
+  gameId        String
+  fromAccountId String
+  toAccountId   String
+  amount        Int
+  note          String?
+  createdAt     DateTime @default(now())
+  
+  game        Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  fromAccount Account @relation("FromAccount", fields: [fromAccountId], references: [id])
+  toAccount   Account @relation("ToAccount", fields: [toAccountId], references: [id])
+  
+  @@index([gameId])
+  @@index([createdAt])
+}
+
+model Session {
+  id               String   @id @default(cuid())
+  gameId           String
+  accountId        String
+  clientFingerprint String
+  createdAt        DateTime @default(now())
+  lastSeenAt       DateTime @default(now())
+  
+  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@index([gameId])
+}
+
+model Setting {
+  gameId               String  @id
+  allowNegativeBalances Boolean @default(false)
+  
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
