@@ -54,9 +54,20 @@ export default function HostDashboard() {
   const [transferNote, setTransferNote] = useState('')
 
   useEffect(() => {
-    fetchGameData()
-    fetchHostIP()
+    const initializeData = async () => {
+      await fetchHostIP()
+      await fetchGameData()
+    }
+    initializeData()
   }, [gameId])
+
+  useEffect(() => {
+    if (hostIP && gameData) {
+      const baseUrl = `http://${hostIP}:3000`
+      const joinUrl = `${baseUrl}/join?code=${gameData.joinCode}`
+      QRCode.toDataURL(joinUrl).then(setQrCodeUrl).catch(console.error)
+    }
+  }, [hostIP, gameData])
 
   useEffect(() => {
     if (isConnected && gameId) {
@@ -91,7 +102,9 @@ export default function HostDashboard() {
         const data = await response.json()
         setGameData(data)
         
-        const joinUrl = `${window.location.origin}/join?code=${data.joinCode}`
+        // Use host IP if available, otherwise fall back to window.location.origin
+        const baseUrl = hostIP ? `http://${hostIP}:3000` : window.location.origin
+        const joinUrl = `${baseUrl}/join?code=${data.joinCode}`
         const qr = await QRCode.toDataURL(joinUrl)
         setQrCodeUrl(qr)
       }
