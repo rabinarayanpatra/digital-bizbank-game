@@ -1,4 +1,4 @@
-# Business-UPI (Local) 💰
+# Business-game online (Local) 💰
 
 A **fully local, LAN-only** digital cash system for the *Business* board game. A laptop hosts the game (acts as **Bank**) and players on the same Wi-Fi join via a code to send/receive money, with a fixed game budget, real-time balances, and an auditable transaction ledger.
 
